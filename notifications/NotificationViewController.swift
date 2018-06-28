@@ -18,16 +18,11 @@ class NotificationViewController: UIViewController {
         self.messageTitle = title
         self.messageText = text
         super.init(nibName: nil, bundle: nil)
+        self.modalTransitionStyle = .crossDissolve
+        self.modalPresentationStyle = .overFullScreen
     }
     func addAction(_ action: NotificationAction) {
         self.actions.append(action)
-    }
-    func show() {
-        self.addButtons()
-        self.fadeIn {}
-        self.animateGradient { [weak self] in
-            self?.animateToMessage()
-        }
     }
     
     // MARK: - Settings
@@ -82,6 +77,10 @@ class NotificationViewController: UIViewController {
         super.viewDidLoad()
         self.setupUI()
     }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.show()
+    }
     
     // MARK: - Stubs
     required init?(coder aDecoder: NSCoder) {
@@ -93,10 +92,16 @@ class NotificationViewController: UIViewController {
 
 // MARK: - UI updates
 extension NotificationViewController {
-    private func hide() {
-        self.fadeOut { [weak self] in
-            self?.remove()
+    private func show() {
+        self.addButtons()
+        self.fadeIn {}
+        self.animateGradient { [weak self] in
+            self?.animateToMessage()
         }
+    }
+    private func hide() {
+        self.fadeOut {}
+        self.dismiss(animated: true, completion: nil)
     }
     private func addButtons() {
         self.buttons = self.actions.map({self.makeButton(title: $0.title)})
@@ -126,21 +131,19 @@ extension NotificationViewController {
     }
     private func fadeIn(then completion: @escaping () -> Void) {
         self.notificationView.transform = CGAffineTransform(scaleX: self.fadeScale, y: self.fadeScale)
-        UIView.animate(withDuration: 0.15,
+        UIView.animate(withDuration: 0.3,
                        animations: { [weak self] in
-                        self?.view.alpha = 1
                         self?.notificationView.transform = CGAffineTransform.identity
             }, completion: { (_) in
                 completion()
         })
     }
     private func fadeOut(then completion: @escaping () -> Void) {
-        UIView.animate(withDuration: 0.15,
+        UIView.animate(withDuration: 0.3,
                        animations: { [weak self] in
                         guard let fadeScale = self?.fadeScale else {
                             return
                         }
-                        self?.view.alpha = 0
                         self?.notificationView.transform = CGAffineTransform(scaleX: fadeScale, y: fadeScale)
             }, completion: { (_) in
                 completion()
@@ -185,7 +188,6 @@ extension NotificationViewController {
 // MARK: - UI
 extension NotificationViewController {
     private func setupUI() {
-        self.view.alpha = 0
         self.view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         self.view.add(self.notificationView)
         self.notificationView.makeSuperviewCenterConstraints(xOffset: 0, yOffset: 0)
